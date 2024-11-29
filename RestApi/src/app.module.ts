@@ -3,8 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { MeserosModule } from 'src/modules/meseros.module';
 import { MesasModule } from 'src/modules/mesas.module';
-import { AlimentosModule } from 'src/modules/alimentos.module';
 import { CacheModule } from './modules/cache.module';
+import { AlimentosController } from './controllers/alimentos.controller';
 
 @Module({
   imports: [
@@ -20,12 +20,11 @@ import { CacheModule } from './modules/cache.module';
       autoLoadEntities: true,
       synchronize: true,
     }),
-    AlimentosModule,
     MesasModule,
     MeserosModule,
     CacheModule,
   ],
-  controllers: [],
+  controllers: [AlimentosController],
   providers: [],
 })
 export class AppModule {}

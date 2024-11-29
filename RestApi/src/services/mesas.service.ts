@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateMesaDto } from 'src/dtos/create-mesa.dto';
@@ -6,6 +6,7 @@ import { UpdateMesaDto } from 'src/dtos/update-mesa.dto';
 import { Mesa } from 'src/entities/mesa.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from '@nestjs/cache-manager';
+import axios from 'axios'; // Usaremos Axios para consultar la API SOAP.
 
 @Injectable()
 export class MesasService {
@@ -15,7 +16,8 @@ export class MesasService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
-  create(createMesaDto: CreateMesaDto) {
+  async create(createMesaDto: CreateMesaDto) {
+    await this.validateProductos(createMesaDto.idProducto);
     const mesa = this.mesasRepository.create(createMesaDto);
     return this.mesasRepository.save(mesa);
   }
@@ -34,7 +36,6 @@ export class MesasService {
       limit,
     };
   }
-  
 
   async findOne(id: number) {
     const mesa = await this.mesasRepository.findOneBy({ idMesa: id });
@@ -43,7 +44,8 @@ export class MesasService {
   }
 
   async updateMesa(id: number, updateMesaDto: UpdateMesaDto): Promise<Mesa> {
-    const mesa = await this.mesasRepository.findOneBy({idMesa: id});
+    await this.validateProductos(updateMesaDto.idProducto);
+    const mesa = await this.mesasRepository.findOneBy({ idMesa: id });
     if (!mesa) {
       throw new NotFoundException(`Mesa con ID ${id} no encontrada`);
     }
@@ -55,6 +57,7 @@ export class MesasService {
   }
 
   async update(id: number, updateMesaDto: UpdateMesaDto) {
+    await this.validateProductos(updateMesaDto.idProducto);
     const mesaToUpdate = await this.mesasRepository.preload({
       idMesa: id,
       ...updateMesaDto,
@@ -63,11 +66,26 @@ export class MesasService {
     const updatedMesa = await this.mesasRepository.save(mesaToUpdate);
     await this.cacheManager.store.reset();
     return updatedMesa;
-    
   }
 
-  remove(id: number) {
+  async remove(id: number) {
     this.cacheManager.store.reset();
     return this.mesasRepository.delete({ idMesa: id });
+  }
+
+  // Validar existencia de productos en la API SOAP.
+  private async validateProductos(productos: number[]) {
+    if (!productos || productos.length === 0) return;
+
+    for (const id of productos) {
+      try {
+        const response = await axios.get(`http://soap-api:4000/api/alimentos/${id}`);
+        if (response.status !== 200) {
+          throw new Error(`Producto con ID ${id} no encontrado`);
+        }
+      } catch (error) {
+        throw new BadRequestException(`Producto con ID ${id} no encontrado`);
+      }
+    }
   }
 }

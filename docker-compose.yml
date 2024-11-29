@@ -1,0 +1,37 @@
+version: '3.8'
+services:
+  rest-api:
+    build:
+      context: ./RestApi
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - soap-api
+    env_file:
+      - ./RestApi/.env
+  soap-api:
+    build:
+      context: ./SoapApi
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+  postgres:
+    image: postgres:13
+    container_name: rest-api-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: TheBestPassword
+      POSTGRES_DB: restaurantDB
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
