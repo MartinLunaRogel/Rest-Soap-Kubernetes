@@ -6,8 +6,8 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = new DocumentBuilder()
-    .setTitle('API REST Restaurant')
-    .setDescription('API for restaurant management')
+    .setTitle('RestApi y SoapApi en Kubernetes')
+    .setDescription('API para un restaurante - Martin Luna Rogel')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
